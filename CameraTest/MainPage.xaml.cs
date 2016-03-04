@@ -18,6 +18,7 @@ using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
 using Windows.System.Display;
+using Windows.UI;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -27,6 +28,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
+using Windows.UI.Xaml.Shapes;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -155,7 +157,7 @@ namespace CameraTest
             // Initialize the preview to the current orientation
             if (_isPreviewing)
             {
-               await SetPreviewRotationAsync();
+                await SetPreviewRotationAsync();
             }
         }
 
@@ -283,14 +285,54 @@ namespace CameraTest
             VideoFrame previewFrame = await _mediaCapture.GetPreviewFrameAsync(videoFrame);
 
             SoftwareBitmap previewBitmap = previewFrame.SoftwareBitmap;
-            SoftwareBitmapSource bitmapSource = new SoftwareBitmapSource();
-            await bitmapSource.SetBitmapAsync(previewBitmap);
+            //SoftwareBitmapSource bitmapSource = new SoftwareBitmapSource();
+            //await bitmapSource.SetBitmapAsync(previewBitmap);
 
-            imageControl.Source = bitmapSource;
+            //imageControl.Source = bitmapSource;
 
-            await StopPreviewAsync();
+            //await StopPreviewAsync();
             previewFrame.Dispose();
             previewFrame = null;
+
+            WriteableBitmap wb = BitmapFactory.New(previewBitmap.PixelWidth, previewBitmap.PixelHeight);
+            previewBitmap.CopyToBuffer(wb.PixelBuffer);
+            //9 x 16
+            int horizontalBlock = 9;
+            int VerticalBlock = 16;
+            int blockHeight = wb.PixelHeight / VerticalBlock;
+            int blockWidth = wb.PixelWidth / horizontalBlock;
+            WhiteLineCanvas.Height = PreviewControl.ActualHeight;
+            WhiteLineCanvas.Width = WhiteLineCanvas.Height * previewBitmap.PixelWidth / previewBitmap.PixelHeight;
+            WhiteLineCanvas.Children.Clear();
+
+            for (int i = 0; i < horizontalBlock; i++)
+                for (int j = 0; j < VerticalBlock; j++)
+                {
+                    int xStart = i * blockWidth;
+                    int xEnd = (i + 1) * blockWidth - 1;
+                    int yStart = j * blockHeight;
+                    int yEnd = (j + 1) * blockHeight - 1;
+                    if (wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200)
+                    //wb.DrawRectangle(xStart, yStart, xEnd, yEnd, Colors.Red);
+                    {
+                        Rectangle rec = new Rectangle();
+                        double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
+                        double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
+                        rec.Width = blockWidth * widthRatio;
+                        rec.Height = blockHeight * heightRatio;
+                        rec.Fill = new SolidColorBrush(Colors.Red);
+                        Canvas.SetLeft(rec, xStart * widthRatio);
+                        Canvas.SetTop(rec, yStart * heightRatio);
+                        WhiteLineCanvas.Children.Add(rec);
+                    }
+                    //wb.SetPixel(xStart, yStart, Colors.Red);
+                    //wb.SetPixel(xStart, yEnd, Colors.Red);
+                    //wb.SetPixel(xEnd, yStart, Colors.Red);
+                    //wb.SetPixel(xEnd, yEnd, Colors.Red);
+                    
+                }
+            //imageControl.Source = wb;
+            //DebugTips(wb.GetPixel(i, j).R.ToString() + "," + wb.GetPixel(i, j).G.ToString() + "," + wb.GetPixel(i, j).B.ToString());
 
 
         }
