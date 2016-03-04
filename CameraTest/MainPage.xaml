@@ -1,0 +1,32 @@
+﻿<Page
+    x:Class="CameraTest.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CameraTest"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid>
+            <Grid.ColumnDefinitions></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"></RowDefinition>
+                <RowDefinition Height="10*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Canvas.ZIndex="9">
+                <Button Margin="5" Name="StartButton" Click="StartButton_Click">Cam Start</Button>
+                <Button Margin="5" Name="CaptureButton" Click="CaptureButton_Click">Capture</Button>
+                <Button Margin="5" Name="ScreenshotButton">Screenshot</Button>
+                <Button Margin="5" Name="StopButton" Click="StopButton_Click">Stop</Button>
+            </StackPanel>
+            <TextBlock Grid.Row="1" Name="TipsTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Canvas.ZIndex="3" RenderTransformOrigin="0.5,0.5" Foreground="Red">
+                <TextBlock.RenderTransform>
+                    <CompositeTransform Rotation="90"/>
+                </TextBlock.RenderTransform>Test</TextBlock>
+            <Image Grid.Row="1" x:Name="imageControl" Canvas.ZIndex="1"/>
+            <InkCanvas Grid.Row="1" Canvas.ZIndex="2" Name="WhiteLineCanvas"></InkCanvas>
+            <CaptureElement Grid.Row="1" Name="PreviewControl" Stretch="Uniform"></CaptureElement>
+        </Grid>
+    </Grid>
+</Page>
