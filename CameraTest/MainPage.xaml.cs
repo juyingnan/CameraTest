@@ -159,6 +159,9 @@ namespace CameraTest
             {
                 await SetPreviewRotationAsync();
             }
+
+            //try predefine rectangles
+
         }
 
         private async void MediaCapture_RecordLimitationExceeded(MediaCapture sender)
@@ -279,6 +282,96 @@ namespace CameraTest
 
         private async void CaptureButton_Click(object sender, RoutedEventArgs e)
         {
+            //start timer
+            DateTime startTime = DateTime.Now;
+
+            //Get screenshot bitmap
+            SoftwareBitmap previewBitmap = await GetPreviewBitmap();
+            WriteableBitmap wb = new WriteableBitmap(previewBitmap.PixelWidth, previewBitmap.PixelHeight);
+            previewBitmap.CopyToBuffer(wb.PixelBuffer);
+            wb = wb.Resize(wb.PixelWidth / 2, wb.PixelHeight / 2, WriteableBitmapExtensions.Interpolation.Bilinear);
+            
+            //divide into blocks
+            int horizontalBlock = 18;
+            int VerticalBlock = 32;
+            int blockHeight = wb.PixelHeight / VerticalBlock;
+            int blockWidth = wb.PixelWidth / horizontalBlock;
+
+            //set canvas
+            WhiteLineCanvas.Height = PreviewControl.ActualHeight;
+            WhiteLineCanvas.Width = WhiteLineCanvas.Height * previewBitmap.PixelWidth / previewBitmap.PixelHeight;
+            WhiteLineCanvas.Children.Clear();
+            
+            //test
+            //WriteableBitmap wbt = BitmapFactory.New(3, 3);
+            //wbt.SetPixel(0, 0, Colors.Red);
+            //wbt.SetPixel(1, 0, Colors.Blue);
+            //wbt.SetPixel(2, 0, Colors.Green);
+            //wbt.SetPixel(0, 1, Colors.White);
+            //wbt.SetPixel(1, 1, Colors.Black);
+            //wbt.SetPixel(2, 1, Colors.Gray);
+            //wbt.SetPixel(0, 2, Colors.WhiteSmoke);
+            //wbt.SetPixel(1, 2, Colors.Brown);
+            //wbt.SetPixel(2, 2, Colors.Yellow);
+            //imageControl.Source = wbt;
+            //byte[] datat = wbt.ToByteArray();
+
+            //try faster, no GetPixel()
+            byte[] data = wb.ToByteArray();
+            int bitsPerPixel = 4;
+
+
+
+            for (int i = 0; i < horizontalBlock; i++)
+                for (int j = 0; j < VerticalBlock; j++)
+                {
+                    int xStart = i * blockWidth;
+                    int xEnd = (i + 1) * blockWidth - 1;
+                    int yStart = j * blockHeight;
+                    int yEnd = (j + 1) * blockHeight - 1;
+                    int index = Coordinate2Index(wb.PixelWidth, bitsPerPixel, xStart, yStart);
+
+                    //debug: stroke reference
+                    //if (true)
+                    //{
+                    //    Rectangle rec = new Rectangle();
+                    //    double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
+                    //    double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
+                    //    rec.Width = blockWidth * widthRatio;
+                    //    rec.Height = blockHeight * heightRatio;
+                    //    rec.Stroke = new SolidColorBrush(Color.FromArgb(data[index + 3], data[index + 2], data[index + 1], data[index]));
+                    //    rec.StrokeThickness = 2;
+                    //    Canvas.SetLeft(rec, xStart * widthRatio);
+                    //    Canvas.SetTop(rec, yStart * heightRatio);
+                    //    WhiteLineCanvas.Children.Add(rec);
+                    //}
+
+                    int whiteThreshold = 200;
+                    //if (wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200)
+                    if (data[index + 0] > whiteThreshold && data[index + 1] > whiteThreshold && data[index + 2] > whiteThreshold)
+                    {
+                        Rectangle rec = new Rectangle();
+                        double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
+                        double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
+                        rec.Width = blockWidth * widthRatio;
+                        rec.Height = blockHeight * heightRatio;
+                        rec.Fill = new SolidColorBrush(Colors.Green);
+                        Canvas.SetLeft(rec, xStart * widthRatio);
+                        Canvas.SetTop(rec, yStart * heightRatio);
+                        WhiteLineCanvas.Children.Add(rec);
+                    }
+                }
+            //imageControl.Source = wb;
+            //DebugTips(wb.GetPixel(i, j).R.ToString() + "," + wb.GetPixel(i, j).G.ToString() + "," + wb.GetPixel(i, j).B.ToString());
+
+            //end timer
+            DateTime endTime = DateTime.Now;
+            var elapsedTime = endTime - startTime;
+            DebugTips(elapsedTime.TotalMilliseconds.ToString());
+        }
+
+        private async Task<SoftwareBitmap> GetPreviewBitmap()
+        {
             var previewProperties = _mediaCapture.VideoDeviceController.GetMediaStreamProperties(MediaStreamType.VideoPreview) as VideoEncodingProperties;
             //VideoFrame videoFrame = new VideoFrame(BitmapPixelFormat.Bgra8, (int)previewProperties.Width, (int)previewProperties.Height);
             VideoFrame videoFrame = new VideoFrame(BitmapPixelFormat.Bgra8, (int)previewProperties.Height, (int)previewProperties.Width);
@@ -293,48 +386,12 @@ namespace CameraTest
             //await StopPreviewAsync();
             previewFrame.Dispose();
             previewFrame = null;
+            return previewBitmap;
+        }
 
-            WriteableBitmap wb = BitmapFactory.New(previewBitmap.PixelWidth, previewBitmap.PixelHeight);
-            previewBitmap.CopyToBuffer(wb.PixelBuffer);
-            //9 x 16
-            int horizontalBlock = 9;
-            int VerticalBlock = 16;
-            int blockHeight = wb.PixelHeight / VerticalBlock;
-            int blockWidth = wb.PixelWidth / horizontalBlock;
-            WhiteLineCanvas.Height = PreviewControl.ActualHeight;
-            WhiteLineCanvas.Width = WhiteLineCanvas.Height * previewBitmap.PixelWidth / previewBitmap.PixelHeight;
-            WhiteLineCanvas.Children.Clear();
-
-            for (int i = 0; i < horizontalBlock; i++)
-                for (int j = 0; j < VerticalBlock; j++)
-                {
-                    int xStart = i * blockWidth;
-                    int xEnd = (i + 1) * blockWidth - 1;
-                    int yStart = j * blockHeight;
-                    int yEnd = (j + 1) * blockHeight - 1;
-                    if (wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200)
-                    //wb.DrawRectangle(xStart, yStart, xEnd, yEnd, Colors.Red);
-                    {
-                        Rectangle rec = new Rectangle();
-                        double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
-                        double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
-                        rec.Width = blockWidth * widthRatio;
-                        rec.Height = blockHeight * heightRatio;
-                        rec.Fill = new SolidColorBrush(Colors.Red);
-                        Canvas.SetLeft(rec, xStart * widthRatio);
-                        Canvas.SetTop(rec, yStart * heightRatio);
-                        WhiteLineCanvas.Children.Add(rec);
-                    }
-                    //wb.SetPixel(xStart, yStart, Colors.Red);
-                    //wb.SetPixel(xStart, yEnd, Colors.Red);
-                    //wb.SetPixel(xEnd, yStart, Colors.Red);
-                    //wb.SetPixel(xEnd, yEnd, Colors.Red);
-                    
-                }
-            //imageControl.Source = wb;
-            //DebugTips(wb.GetPixel(i, j).R.ToString() + "," + wb.GetPixel(i, j).G.ToString() + "," + wb.GetPixel(i, j).B.ToString());
-
-
+        private int Coordinate2Index(int pixelWidth, int bitsPerPixel, int xStart, int yStart)
+        {
+            return bitsPerPixel * (pixelWidth * yStart + xStart);
         }
     }
 }

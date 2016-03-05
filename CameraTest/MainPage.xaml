@@ -24,7 +24,7 @@
                 <TextBlock.RenderTransform>
                     <CompositeTransform Rotation="90"/>
                 </TextBlock.RenderTransform>Test</TextBlock>
-            <Image Grid.Row="1" x:Name="imageControl" Canvas.ZIndex="1"/>
+            <Image Grid.Row="1" x:Name="imageControl" Canvas.ZIndex="1" Height="128" Width="72" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
             <Canvas Grid.Row="1" Canvas.ZIndex="2" Name="WhiteLineCanvas"></Canvas>
             <CaptureElement Grid.Row="1" Name="PreviewControl" Stretch="Uniform" Canvas.ZIndex="0"></CaptureElement>
         </Grid>
