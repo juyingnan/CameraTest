@@ -17,7 +17,7 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal" Canvas.ZIndex="9">
                 <Button Margin="5" Name="StartButton" Click="StartButton_Click">Cam Start</Button>
                 <Button Margin="5" Name="CaptureButton" Click="CaptureButton_Click">Capture</Button>
-                <Button Margin="5" Name="ScreenshotButton">Screenshot</Button>
+                <Button Margin="5" Name="ScreenshotButton" Click="ScreenshotButton_Click">Screenshot</Button>
                 <Button Margin="5" Name="StopButton" Click="StopButton_Click">Stop</Button>
             </StackPanel>
             <TextBlock Grid.Row="1" Name="TipsTextBlock" HorizontalAlignment="Left" VerticalAlignment="Top" Canvas.ZIndex="3" RenderTransformOrigin="0.5,0.5" Foreground="Red">

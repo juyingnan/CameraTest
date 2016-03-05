@@ -20,6 +20,7 @@ using Windows.Storage.Streams;
 using Windows.System.Display;
 using Windows.UI;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -427,6 +428,12 @@ namespace CameraTest
         private int Coordinate2Index(int pixelWidth, int bitsPerPixel, int xStart, int yStart)
         {
             return bitsPerPixel * (pixelWidth * yStart + xStart);
+        }
+
+        private async void ScreenshotButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageDialog msgbox = new MessageDialog("Not Implemented.", "WP Capture Screen");
+            await msgbox.ShowAsync();
         }
     }
 }
