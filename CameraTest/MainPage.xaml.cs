@@ -42,6 +42,7 @@ namespace CameraTest
         public MainPage()
         {
             this.InitializeComponent();
+            DispatcherTimerSetup();
         }
 
         private readonly DisplayRequest _displayRequest = new DisplayRequest();
@@ -56,6 +57,21 @@ namespace CameraTest
         private readonly SimpleOrientationSensor _orientationSensor = SimpleOrientationSensor.GetDefault();
         private SimpleOrientation _deviceOrientation = SimpleOrientation.NotRotated;
         private static readonly Guid RotationKey = new Guid("C380465D-2271-428C-9B83-ECEA3B4A85C1");
+        Random random = new Random();
+        DispatcherTimer dispatcherTimer;
+
+        public void DispatcherTimerSetup()
+        {
+            dispatcherTimer = new DispatcherTimer();
+            dispatcherTimer.Tick += dispatcherTimer_Tick;
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 2);
+            DebugTips("dispatcherTimer.IsEnabled = " + dispatcherTimer.IsEnabled + "\n");
+        }
+
+        private async void dispatcherTimer_Tick(object sender, object e)
+        {
+            await CaptureWhiteLine();
+        }
 
         private async Task InitializeCameraAsync()
         {
@@ -253,6 +269,9 @@ namespace CameraTest
 
         private async Task StopPreviewAsync()
         {
+            dispatcherTimer.Stop();
+            await System.Threading.Tasks.Task.Delay(1000);
+            WhiteLineCanvas.Children.Clear();
             // Stop the preview
             try
             {
@@ -282,6 +301,11 @@ namespace CameraTest
 
         private async void CaptureButton_Click(object sender, RoutedEventArgs e)
         {
+            dispatcherTimer.Start();
+        }
+
+        private async Task CaptureWhiteLine()
+        {
             //start timer
             DateTime startTime = DateTime.Now;
 
@@ -290,7 +314,7 @@ namespace CameraTest
             WriteableBitmap wb = new WriteableBitmap(previewBitmap.PixelWidth, previewBitmap.PixelHeight);
             previewBitmap.CopyToBuffer(wb.PixelBuffer);
             wb = wb.Resize(wb.PixelWidth / 2, wb.PixelHeight / 2, WriteableBitmapExtensions.Interpolation.Bilinear);
-            
+
             //divide into blocks
             int horizontalBlock = 18;
             int VerticalBlock = 32;
@@ -301,7 +325,7 @@ namespace CameraTest
             WhiteLineCanvas.Height = PreviewControl.ActualHeight;
             WhiteLineCanvas.Width = WhiteLineCanvas.Height * previewBitmap.PixelWidth / previewBitmap.PixelHeight;
             WhiteLineCanvas.Children.Clear();
-            
+
             //test
             //WriteableBitmap wbt = BitmapFactory.New(3, 3);
             //wbt.SetPixel(0, 0, Colors.Red);
@@ -319,7 +343,8 @@ namespace CameraTest
             //try faster, no GetPixel()
             byte[] data = wb.ToByteArray();
             int bitsPerPixel = 4;
-
+            int judgePoints = 9;
+            int whiteThreshold = 150;
 
 
             for (int i = 0; i < horizontalBlock; i++)
@@ -329,7 +354,29 @@ namespace CameraTest
                     int xEnd = (i + 1) * blockWidth - 1;
                     int yStart = j * blockHeight;
                     int yEnd = (j + 1) * blockHeight - 1;
-                    int index = Coordinate2Index(wb.PixelWidth, bitsPerPixel, xStart, yStart);
+                    int hitPoints = 0;
+                    for (int k = 0; k < judgePoints; k++)
+                    {
+                        int x = random.Next(xStart, xEnd);
+                        int y = random.Next(yStart, yEnd);
+                        int index = Coordinate2Index(wb.PixelWidth, bitsPerPixel, x, y);
+                        if (data[index + 0] > whiteThreshold && data[index + 1] > whiteThreshold && data[index + 2] > whiteThreshold)
+                        {
+                            hitPoints++;
+                        }
+                    }
+                    if (hitPoints >= judgePoints / 3 * 2)
+                    {
+                        Rectangle rec = new Rectangle();
+                        double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
+                        double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
+                        rec.Width = blockWidth * widthRatio;
+                        rec.Height = blockHeight * heightRatio;
+                        rec.Fill = new SolidColorBrush(Colors.Green);
+                        Canvas.SetLeft(rec, xStart * widthRatio);
+                        Canvas.SetTop(rec, yStart * heightRatio);
+                        WhiteLineCanvas.Children.Add(rec);
+                    }
 
                     //debug: stroke reference
                     //if (true)
@@ -346,20 +393,7 @@ namespace CameraTest
                     //    WhiteLineCanvas.Children.Add(rec);
                     //}
 
-                    int whiteThreshold = 200;
                     //if (wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200 && wb.GetPixel(xStart, yStart).B > 200)
-                    if (data[index + 0] > whiteThreshold && data[index + 1] > whiteThreshold && data[index + 2] > whiteThreshold)
-                    {
-                        Rectangle rec = new Rectangle();
-                        double widthRatio = WhiteLineCanvas.Width / wb.PixelWidth;
-                        double heightRatio = WhiteLineCanvas.Height / wb.PixelHeight;
-                        rec.Width = blockWidth * widthRatio;
-                        rec.Height = blockHeight * heightRatio;
-                        rec.Fill = new SolidColorBrush(Colors.Green);
-                        Canvas.SetLeft(rec, xStart * widthRatio);
-                        Canvas.SetTop(rec, yStart * heightRatio);
-                        WhiteLineCanvas.Children.Add(rec);
-                    }
                 }
             //imageControl.Source = wb;
             //DebugTips(wb.GetPixel(i, j).R.ToString() + "," + wb.GetPixel(i, j).G.ToString() + "," + wb.GetPixel(i, j).B.ToString());
@@ -368,6 +402,7 @@ namespace CameraTest
             DateTime endTime = DateTime.Now;
             var elapsedTime = endTime - startTime;
             DebugTips(elapsedTime.TotalMilliseconds.ToString());
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, (int)(elapsedTime.TotalMilliseconds * 2.0));
         }
 
         private async Task<SoftwareBitmap> GetPreviewBitmap()
