@@ -347,6 +347,15 @@ namespace CameraTest
             int judgePoints = 9;
             int whiteThreshold = 150;
 
+            //detection demo
+            Rectangle carRec = new Rectangle();
+            carRec.Width = WhiteLineCanvas.Width * 0.2;
+            carRec.Height = WhiteLineCanvas.Height;
+            carRec.Stroke = new SolidColorBrush(Colors.Yellow);
+            carRec.StrokeThickness = 2;
+            Canvas.SetLeft(carRec, WhiteLineCanvas.Width - carRec.Width);
+            Canvas.SetTop(carRec, WhiteLineCanvas.Height - carRec.Height);
+            WhiteLineCanvas.Children.Add(carRec);
 
             for (int i = 0; i < horizontalBlock; i++)
                 for (int j = 0; j < VerticalBlock; j++)
@@ -374,6 +383,8 @@ namespace CameraTest
                         rec.Width = blockWidth * widthRatio;
                         rec.Height = blockHeight * heightRatio;
                         rec.Fill = new SolidColorBrush(Colors.Green);
+                        if (xEnd * widthRatio > WhiteLineCanvas.Width - carRec.Width)
+                            rec.Fill = new SolidColorBrush(Colors.Red);
                         Canvas.SetLeft(rec, xStart * widthRatio);
                         Canvas.SetTop(rec, yStart * heightRatio);
                         WhiteLineCanvas.Children.Add(rec);
